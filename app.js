@@ -306,6 +306,13 @@ document.addEventListener('DOMContentLoaded', () => {
      *   - patent_id             (non patent_number)
      *   - assignees.assignee_organization  (sotto-entità, non campo piatto)
      */
+    const buildPatentsViewURL = (azienda, keywords) => {
+        const q = JSON.stringify({ _and: [{ _text_any: { assignee_organization: azienda } }, { _text_any: { patent_title: keywords } }] });
+        const f = JSON.stringify(['patent_id','patent_title','patent_date','assignees.assignee_organization']);
+        const o = JSON.stringify({ per_page: 25 });
+        const s = JSON.stringify([{ patent_date: 'desc' }]);
+        return `${PATENTSVIEW_URL}?q=${encodeURIComponent(q)}&f=${encodeURIComponent(f)}&o=${encodeURIComponent(o)}&s=${encodeURIComponent(s)}`;
+    };
     const buildPatentsViewQuery = (azienda, keywords) => ({
         q: {
             _and: [
@@ -344,10 +351,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (const terms of termsList) {
             try {
-                const resp = await proxyFetch(PATENTSVIEW_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(buildPatentsViewQuery(azienda, terms))
+                const resp = await proxyFetch(buildPatentsViewURL(azienda, terms), {
+                    method: 'GET'
                 });
 
                 if (!resp.ok) {
