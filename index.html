@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ricerca Brevetti — Patent Intelligence</title>
+    <meta name="description" content="Screening brevettuale automatizzato: ricerca brevetti attivi di competitor industriali — copertura globale tramite Lens.org (EP/WO/US/CN/JP) e USPTO PatentsView.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-wrapper">
+
+        <!-- ── HEADER ─────────────────────────────────────────────── -->
+        <header class="card">
+            <div class="header-grid">
+                <div class="field-group">
+                    <label for="azienda" class="field-label">Azienda</label>
+                    <input type="text" id="azienda" class="field-input" placeholder="es. SWEP" value="SWEP">
+                </div>
+                <div class="field-group">
+                    <label for="prodotto" class="field-label">Prodotto / Tecnologia</label>
+                    <input type="text" id="prodotto" class="field-input" placeholder="es. e8T" value="e8T">
+                </div>
+                <button id="btn-avvia" class="btn btn-primary">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    Avvia ricerca
+                </button>
+            </div>
+
+            <!-- Riga token Lens.org -->
+            <div class="token-row">
+                <div class="field-group field-group--token">
+                    <label for="lens-token" class="field-label">
+                        Token Lens.org
+                        <span class="token-badge" id="coverage-badge">🇺🇸 Solo USA</span>
+                    </label>
+                    <div class="token-input-wrap">
+                        <input type="password" id="lens-token" class="field-input field-input--token"
+                               placeholder="Incolla il tuo token gratuito per copertura globale (EP · WO · US · CN · JP)">
+                        <button id="btn-toggle-token" class="btn-icon" title="Mostra/nascondi token" aria-label="Mostra token">
+                            <i class="fa-solid fa-eye" id="icon-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <a href="https://www.lens.org/lens/user/subscriptions#" target="_blank" rel="noopener noreferrer"
+                   class="lens-link">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Ottieni token gratuito
+                </a>
+            </div>
+
+            <p class="header-note" id="header-note">
+                <i class="fa-solid fa-database"></i>
+                <span id="note-text">Fonte: <strong>USPTO PatentsView</strong> — brevetti USA &nbsp;|&nbsp; Aggiungi token Lens.org per copertura globale</span>
+                <span id="proxy-badge" class="proxy-badge hidden">
+                    <i class="fa-solid fa-shield-halved"></i> Via CORS proxy
+                </span>
+            </p>
+
+        </header>
+
+        <!-- ── AGENTI ─────────────────────────────────────────────── -->
+        <section class="agents-grid" aria-label="Pipeline agenti">
+
+            <!-- 1. Orchestratore -->
+            <article id="agent-1" class="agent-card state-idle">
+                <div class="agent-icon-wrap">
+                    <i class="fa-solid fa-sitemap state-icon"></i>
+                </div>
+                <div class="agent-name">Orchestratore</div>
+                <div class="agent-status desc-text">In attesa</div>
+            </article>
+
+            <!-- 2. Sub-agente Ricerca -->
+            <article id="agent-2" class="agent-card state-idle">
+                <div class="agent-icon-wrap">
+                    <i class="fa-solid fa-database state-icon"></i>
+                    <div class="db-badges">
+                        <span id="db-epo"   class="db-badge">EPO</span>
+                        <span id="db-uspto" class="db-badge">USPTO</span>
+                        <span id="db-wipo"  class="db-badge">WIPO</span>
+                        <span id="db-cnipa" class="db-badge">CNIPA</span>
+                    </div>
+                </div>
+                <div class="agent-name">Sub-agente Ricerca</div>
+                <div class="agent-status desc-text">In attesa</div>
+            </article>
+
+            <!-- 3. Sub-agente Verifica -->
+            <article id="agent-3" class="agent-card state-idle">
+                <div class="agent-icon-wrap">
+                    <i class="fa-solid fa-scale-balanced state-icon"></i>
+                </div>
+                <div class="agent-name">Sub-agente Verifica</div>
+                <div class="agent-status desc-text">In attesa</div>
+            </article>
+
+            <!-- 4. Sub-agente Reporting -->
+            <article id="agent-4" class="agent-card state-idle">
+                <div class="agent-icon-wrap">
+                    <i class="fa-solid fa-file-lines state-icon"></i>
+                </div>
+                <div class="agent-name">Sub-agente Reporting</div>
+                <div class="agent-status desc-text">In attesa</div>
+            </article>
+        </section>
+
+        <!-- ── ERRORE ──────────────────────────────────────────── -->
+        <div id="error-section" class="error-section hidden fade-target" role="alert">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div>
+                <strong>Errore durante la ricerca</strong>
+                <p id="error-message">Si è verificato un errore imprevisto.</p>
+            </div>
+        </div>
+
+        <!-- ── OUTPUT: BREVETTI CONFORMI ──────────────────────────── -->
+        <section id="output-section" class="card hidden fade-target" aria-live="polite">
+            <div class="output-header">
+                <div>
+                    <h2 id="output-title" class="output-title">—</h2>
+                    <p id="source-info" class="source-info"></p>
+                </div>
+                <span class="output-badge" id="count-badge">0 brevetti</span>
+            </div>
+            <div class="table-wrapper">
+                <table id="main-table" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>N° Brevetto</th>
+                            <th>Tecnologia / Componente</th>
+                            <th>Luogo</th>
+                            <th>Stato</th>
+                            <th>Azienda</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <tr class="empty-row">
+                            <td colspan="5" class="empty-cell">
+                                <i class="fa-regular fa-folder-open"></i>
+                                Nessun dato disponibile — avvia una ricerca per popolare la tabella
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ── OUTPUT: BREVETTI SCARTATI ──────────────────────────── -->
+        <section id="scartati-section" class="card card-warn hidden fade-target" aria-live="polite">
+            <div class="output-header">
+                <h2 class="output-title output-title--warn">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Brevetti scartati
+                </h2>
+                <span class="output-badge output-badge--warn" id="count-scartati">0 esclusi</span>
+            </div>
+            <div class="table-wrapper">
+                <table id="scartati-table" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>N° Brevetto</th>
+                            <th>Motivo esclusione</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scartati-body">
+                        <tr class="empty-row">
+                            <td colspan="2" class="empty-cell">
+                                <i class="fa-regular fa-circle-check"></i>
+                                Nessun brevetto escluso
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ── NOTA LEGALE ────────────────────────────────────────── -->
+        <aside id="legal-note" class="legal-note hidden fade-target">
+            <i class="fa-solid fa-gavel"></i>
+            <span><strong>Nota:</strong> Screening automatizzato di primo livello. Verificare con patent attorney prima di decisioni progettuali.</span>
+        </aside>
+
+        <!-- ── FOOTER AZIONI ──────────────────────────────────────── -->
+        <footer id="footer-section" class="footer-actions hidden fade-target">
+            <button id="btn-export" class="btn btn-secondary">
+                <i class="fa-solid fa-download"></i> Esporta CSV
+            </button>
+            <button id="btn-reset" class="btn btn-dark">
+                <i class="fa-solid fa-rotate-right"></i> Nuova ricerca
+            </button>
+        </footer>
+
+    </div><!-- /app-wrapper -->
+
+    <script src="app.js"></script>
+</body>
+</html>
